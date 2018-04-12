@@ -44,11 +44,14 @@
   <ItemGroup>
     <Compile Include="AstPainter.cs" />
     <Compile Include="CsLox.cs" />
+    <Compile Include="Exceptions\RuntimeErrorException.cs" />
     <Compile Include="ExtensionMethods\StringExtensions.cs" />
+    <Compile Include="Interpreter.cs" />
     <Compile Include="Parsing\Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scanning\Scanner.cs" />
     <Compile Include="SyntaxTree\Expr.cs" />
+    <Compile Include="SyntaxTree\Stmt.cs" />
     <Compile Include="Tokens\Token.cs" />
     <Compile Include="Tokens\TokenType.cs" />
   </ItemGroup>

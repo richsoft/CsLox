@@ -8,12 +8,16 @@ using CsLox.Scanning;
 using CsLox.Tokens;
 using CsLox.SyntaxTree;
 using CsLox.Parsing;
+using CsLox.Exceptions;
 
 namespace CsLox
 {
     class CsLox
     {
-        static Boolean _had_error = false;
+        private static readonly Interpreter _interpreter = new Interpreter();
+
+        static bool _had_error = false;
+        static bool _had_runtime_error = false;
 
         static void Main(string[] args)
         {
@@ -43,10 +47,8 @@ namespace CsLox
             Run(source);
 
             // If there was an error, exit with a error code
-            if (_had_error)
-            {
-                Environment.Exit(64);
-            }
+            if (_had_error) Environment.Exit(64);
+            if (_had_runtime_error) Environment.Exit(70);
         }
 
         /// <summary>
@@ -54,7 +56,7 @@ namespace CsLox
         /// </summary>
         private static void RunPrompt()
         {
-            while(true)
+            while (true)
             {
                 Console.Write("> ");
                 Run(Console.ReadLine());
@@ -74,9 +76,11 @@ namespace CsLox
             List<Token> tokens = scanner.ScanTokens();
 
             Parser parser = new Parser(tokens);
-            Expr expression = parser.Parse();
+            List<Stmt> statements = parser.Parse();
 
-            Console.WriteLine(new AstPainter().Print(expression));
+            if (_had_error) return;
+
+            _interpreter.Interpret(statements);
 
         }
 
@@ -95,7 +99,7 @@ namespace CsLox
         /// </summary>
         /// <param name="token">The token</param>
         /// <param name="message">The error message</param>
-        public static void Error(Token token, string message)
+        public static void ParseError(Token token, string message)
         {
             if (token.Type == TokenType.EOF)
             {
@@ -105,6 +109,15 @@ namespace CsLox
             {
                 Report(token.Line, $" at '{token.Lexeme}'", message);
             }
+
+        }
+
+        public static void RuntimeError(RuntimeErrorException error)
+        {
+            Console.Error.WriteLine(error.Message);
+            Console.Error.WriteLine($"[line {error.Token.Line}]");
+
+            _had_runtime_error = true;
 
         }
 

@@ -12,10 +12,10 @@ namespace CsLox.SyntaxTree
 
         public interface IVisitor<T>
         {
-            T VisitBinaryExpr(Binary expr);
-            T VisitGroupingExpr(Grouping expr);
-            T VisitLiteralExpr(Literal expr);
-            T VisitUnaryExpr(Unary expr);
+            T Visit(Binary expr);
+            T Visit(Grouping expr);
+            T Visit(Literal expr);
+            T Visit(Unary expr);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -35,7 +35,7 @@ namespace CsLox.SyntaxTree
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.VisitBinaryExpr(this);
+                return visitor.Visit(this);
             }
         }
 
@@ -50,7 +50,7 @@ namespace CsLox.SyntaxTree
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.VisitGroupingExpr(this);
+                return visitor.Visit(this);
             }
         }
 
@@ -65,25 +65,25 @@ namespace CsLox.SyntaxTree
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.VisitLiteralExpr(this);
+                return visitor.Visit(this);
             }
         }
 
         public class Unary : Expr
         {
             public Token Operator { get; }
-            public Expr right;
+            public Expr Right { get; }
 
 
             public Unary(Token op, Expr right)
             {
                 this.Operator = op;
-                this.right = right;
+                this.Right = right;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.VisitUnaryExpr(this);
+                return visitor.Visit(this);
             }
         }
 

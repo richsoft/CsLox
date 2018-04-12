@@ -25,18 +25,18 @@ namespace CsLox
 
         }
 
-        public string VisitBinaryExpr(Expr.Binary expr)
+        public string Visit(Expr.Binary expr)
         {
             return Parenthesise(expr.Operator.Lexeme, expr.Left, expr.Right);
  
         }
 
-        public string VisitGroupingExpr(Expr.Grouping expr)
+        public string Visit(Expr.Grouping expr)
         {
             return Parenthesise("group", expr.Expression);
         }
 
-        public string VisitLiteralExpr(Expr.Literal expr)
+        public string Visit(Expr.Literal expr)
         {
             if (expr.Value == null)
             {
@@ -46,9 +46,9 @@ namespace CsLox
             return expr.Value.ToString();
         }
 
-        public string VisitUnaryExpr(Expr.Unary expr)
+        public string Visit(Expr.Unary expr)
         {
-            return Parenthesise(expr.Operator.Lexeme, expr.right);
+            return Parenthesise(expr.Operator.Lexeme, expr.Right);
         }
 
         /// <summary>

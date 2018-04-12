@@ -26,18 +26,51 @@ namespace CsLox.Parsing
         /// <summary>
         /// Parse the tokens
         /// </summary>
-        /// <returns>The parsed expression</returns>
-        public Expr Parse()
+        /// <returns>The parsed statements</returns>
+        public List<Stmt> Parse()
         {
-            try
+            List<Stmt> statements = new List<Stmt>();
+
+            while(!IsAtEnd())
             {
-                return Expression();
-            }
-            catch (ParseErrorException)
-            {
-                return null;
+                statements.Add(Statement());
             }
 
+            return statements;
+
+        }
+
+        /// <summary>
+        /// Parse a statement
+        /// </summary>
+        /// <returns>The statement</returns>
+        private Stmt Statement()
+        {
+            if (Match(TokenType.PRINT)) return PrintStatement();
+
+            return ExpressionStatement();
+        }
+
+        /// <summary>
+        /// Parse a print statement
+        /// </summary>
+        /// <returns>The statement</returns>
+        private Stmt PrintStatement()
+        {
+            Expr value = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after value");
+            return new Stmt.Print(value);
+        }
+
+        /// <summary>
+        /// Parse an expression statement
+        /// </summary>
+        /// <returns>The statement</returns>
+        private Stmt ExpressionStatement()
+        {
+            Expr expr = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+            return new Stmt.ExpressionStatement(expr);
         }
 
 
@@ -160,7 +193,7 @@ namespace CsLox.Parsing
             if (Match(TokenType.LEFT_PAREN))
             {
                 Expr expr = Expression();
-                Comsume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
+                Consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
                 return new Expr.Grouping(expr);
             }
 
@@ -174,7 +207,7 @@ namespace CsLox.Parsing
         /// <param name="type">The expected token type</param>
         /// <param name="message">The error message</param>
         /// <returns>The token</returns>
-        private Token Comsume(TokenType type, string message)
+        private Token Consume(TokenType type, string message)
         {
             if (Check(type))
             {
@@ -192,7 +225,7 @@ namespace CsLox.Parsing
         /// <param name="message">The error message</param>
         private ParseErrorException Error(Token token, string message)
         {
-            CsLox.Error(token, message);
+            CsLox.ParseError(token, message);
             return new ParseErrorException();
         }
 
