@@ -61,6 +61,11 @@ namespace CsLox
             throw new NotImplementedException();
         }
 
+        public string Visit(Expr.Logical expr)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Build a bracketed string for the expressions
         /// </summary>

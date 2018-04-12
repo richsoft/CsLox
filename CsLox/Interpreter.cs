@@ -13,7 +13,7 @@ namespace CsLox
     class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
 
-        private Environments.Environment _environment = new Environments.Environment();
+        private LoxEnvironment _environment = new LoxEnvironment();
 
         /// <summary>
         /// Interpret statements
@@ -139,6 +139,25 @@ namespace CsLox
             _environment.Assign(expr.Name, value);
             return value;
 
+        }
+
+        public object Visit(Expr.Logical expr)
+        {
+            object left = Evaluate(expr.Left);
+
+            // Short-Curcuit logic
+            if (expr.Operator.Type == TokenType.OR)
+            {
+                // OR - if left side is true, the expression is true
+                if (IsTruthy(left)) return left;
+            }
+            else
+            {
+                // AND - if left side is false, the expression is false
+                if (!IsTruthy(left)) return left;
+            }
+
+            return Evaluate(expr.Right);
         }
 
 
@@ -270,6 +289,61 @@ namespace CsLox
             _environment.Define(stmt.Name.Lexeme, value);
 
             return null;
+        }
+
+        public object Visit(Stmt.Block stmt)
+        {
+            ExecuteBlock(stmt.Statements, new LoxEnvironment(_environment));
+            return null;
+        }
+
+        public object Visit(Stmt.If stmt)
+        {
+            if (IsTruthy(Evaluate(stmt.Condition)))
+            {
+                Execute(stmt.ThenBranch);
+            }
+            else
+            {
+                Execute(stmt.ElseBranch);
+            }
+
+            return null;
+        }
+
+        public object Visit(Stmt.While stmt)
+        {
+            while (IsTruthy(Evaluate(stmt.Condition)))
+            {
+                Execute(stmt.Body);
+            }
+
+            return null;
+        }
+
+
+        private void ExecuteBlock(IEnumerable<Stmt> statements, LoxEnvironment environment)
+        {
+            // Save the current environment
+            LoxEnvironment previous = this._environment;
+
+            try
+            {
+                // Set the new environment
+                this._environment = environment;
+
+                foreach (Stmt statement in statements)
+                {
+                    Execute(statement);
+                }
+            }
+            finally
+            {
+                // Restore the old environment
+                this._environment = previous;
+            }
+
+
         }
     }
 }

@@ -18,6 +18,7 @@ namespace CsLox.SyntaxTree
             T Visit(Unary expr);
             T Visit(Variable expr);
             T Visit(Assign expr);
+            T Visit(Logical expr);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -113,6 +114,25 @@ namespace CsLox.SyntaxTree
             {
                 this.Name = name;
                 this.value = value;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Logical : Expr
+        {
+            public Expr Left { get; }
+            public Token Operator { get; }
+            public Expr Right { get; }
+
+            public Logical(Expr left, Token op, Expr right)
+            {
+                this.Left = left;
+                this.Operator = op;
+                this.Right = right;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)

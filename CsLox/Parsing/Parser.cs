@@ -31,7 +31,7 @@ namespace CsLox.Parsing
         {
             List<Stmt> statements = new List<Stmt>();
 
-            while(!IsAtEnd())
+            while (!IsAtEnd())
             {
                 statements.Add(Declaration());
             }
@@ -85,10 +85,143 @@ namespace CsLox.Parsing
         /// <returns>The statement</returns>
         private Stmt Statement()
         {
+            if (Match(TokenType.FOR)) return ForStatement();
+            if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.WHILE)) return WhileStatement();
+            if (Match(TokenType.LEFT_BRACE)) return new Stmt.Block(Block());
+
 
             return ExpressionStatement();
         }
+
+        /// <summary>
+        /// Parse a for loop
+        /// </summary>
+        /// <returns>The statement</returns>
+        private Stmt ForStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+            // Initializer
+
+            Stmt initializer;
+            if (Match(TokenType.SEMICOLON))
+            {
+                // No initialiser
+                initializer = null;
+            }
+            else if (Match(TokenType.VAR))
+            {
+                // Its a variable decalration
+                initializer = VarDeclaration();
+            }
+            else
+            {
+                // Its an expression
+                // This must be a _statement_
+                initializer = ExpressionStatement();
+            }
+
+            // Condition
+            Expr condition = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                condition = Expression();
+            }
+            Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+            // Increment
+            Expr increment = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                increment = Expression();
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            // Body
+            Stmt body = Statement();
+
+            // Convert to a while loop
+            if (increment != null)
+            {
+                body = new Stmt.Block(new[] { body, new Stmt.ExpressionStatement(increment) });
+            }
+
+            if (condition == null)
+            {
+                // No condition, so set to true
+                condition = new Expr.Literal(true);
+            }
+
+            body = new Stmt.While(condition, body);
+
+            if (initializer != null)
+            {
+                body = new Stmt.Block(new[] { initializer, body });
+            }
+
+            return body;
+
+        }
+
+
+        /// <summary>
+        /// Parse while loop
+        /// </summary>
+        /// <returns>The statement</returns>
+        private Stmt WhileStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect '(' after while condition.");
+            Stmt body = Statement();
+
+            return new Stmt.While(condition, body);
+
+        }
+
+
+        /// <summary>
+        /// Parse if statement
+        /// </summary>
+        /// <returns>The statement</returns>
+        private Stmt IfStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+            Stmt then_branch = Statement();
+            Stmt else_branch = null;
+
+            // Do we have an else?
+            if (Match(TokenType.ELSE))
+            {
+                else_branch = Statement();
+            }
+
+            return new Stmt.If(condition, then_branch, else_branch);
+        }
+
+        /// <summary>
+        /// Parse a block of statementts
+        /// </summary>
+        /// <returns></returns>
+        private List<Stmt> Block()
+        {
+            List<Stmt> statements = new List<Stmt>();
+
+            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+            return statements;
+
+        }
+
 
         /// <summary>
         /// Parse a print statement
@@ -128,7 +261,7 @@ namespace CsLox.Parsing
         /// <returns></returns>
         private Expr Assignment()
         {
-            Expr expr = Equality();
+            Expr expr = Or();
 
             if (Match(TokenType.EQUAL))
             {
@@ -151,6 +284,42 @@ namespace CsLox.Parsing
         }
 
         /// <summary>
+        /// Parse an OR expression
+        /// </summary>
+        /// <returns>The expression</returns>
+        private Expr Or()
+        {
+            Expr expr = And();
+
+            while (Match(TokenType.OR))
+            {
+                Token op = Previous();
+                Expr right = And();
+                expr = new Expr.Logical(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        /// <summary>
+        /// Parse an AND expression
+        /// </summary>
+        /// <returns>The expression</returns>
+        private Expr And()
+        {
+            Expr expr = Equality();
+
+            while (Match(TokenType.AND))
+            {
+                Token op = Previous();
+                Expr right = Equality();
+                expr = new Expr.Logical(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        /// <summary>
         /// Parse a equality expression
         /// </summary>
         /// <returns>The expression</returns>
@@ -158,7 +327,7 @@ namespace CsLox.Parsing
         {
             Expr expr = Comparison();
 
-            while (Match (TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL))
+            while (Match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL))
             {
                 Token op = Previous();
                 Expr right = Comparison();
@@ -384,7 +553,7 @@ namespace CsLox.Parsing
 
             while (!IsAtEnd())
             {
-                
+
                 // We can resync if we are at a semicolon
                 if (Previous().Type == TokenType.SEMICOLON) return;
 

@@ -8,9 +8,22 @@ using System.Threading.Tasks;
 
 namespace CsLox.Environments
 {
-    class Environment
+    class LoxEnvironment
     {
+
+        private readonly LoxEnvironment _enclosing;
         private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
+
+        public LoxEnvironment()
+        {
+            _enclosing = null;
+        }
+
+        public LoxEnvironment(LoxEnvironment enclosing)
+        {
+            _enclosing = enclosing;
+        }
+
 
         /// <summary>
         /// Define a variable
@@ -43,6 +56,12 @@ namespace CsLox.Environments
                 return value;
             }
 
+            // Check the parent environment
+            if (_enclosing != null)
+            {
+                return _enclosing.Get(name);
+            }
+
             throw new RuntimeErrorException(name, $"Undefined variable '{name.Lexeme}'.");
         }
 
@@ -56,6 +75,13 @@ namespace CsLox.Environments
             if (_values.ContainsKey(name.Lexeme))
             {
                 _values[name.Lexeme] = value;
+                return;
+            }
+
+            // Check the parent
+            if (_enclosing != null)
+            {
+                _enclosing.Assign(name, value);
                 return;
             }
 

@@ -14,6 +14,9 @@ namespace CsLox.SyntaxTree
             T Visit(ExpressionStatement stmt);
             T Visit(Print stmt);
             T Visit(VarDeclaration stmt);
+            T Visit(Block stmt);
+            T Visit(If stmt);
+            T Visit(While stmt);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -57,6 +60,57 @@ namespace CsLox.SyntaxTree
             {
                 this.Name = name;
                 this.Initializer = initializer;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Block : Stmt
+        {
+            public IEnumerable<Stmt> Statements { get; }
+
+            public Block(IEnumerable<Stmt> statements)
+            {
+                this.Statements = statements;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class If : Stmt
+        {
+            public Expr Condition { get; }
+            public Stmt ThenBranch { get; }
+            public Stmt ElseBranch { get; }
+
+            public If(Expr condtion, Stmt then_branch, Stmt else_branch)
+            {
+                this.Condition = condtion;
+                this.ThenBranch = then_branch;
+                this.ElseBranch = else_branch;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class While : Stmt
+        {
+            public Expr Condition { get; }
+            public Stmt Body { get; }
+
+            public While(Expr condition, Stmt body)
+            {
+                this.Condition = condition;
+                this.Body = body;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)

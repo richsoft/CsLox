@@ -58,13 +58,22 @@ namespace CsLox
         /// </summary>
         private static void RunPrompt()
         {
-            while (true)
+            bool stop = false;
+
+            Console.CancelKeyPress += (sender, e) =>
+            {
+                stop = true;
+                e.Cancel = true;
+            };
+
+            while (!stop)
             {
                 Console.Write("> ");
                 Run(Console.ReadLine());
 
                 // Reset the error flag
                 _had_error = false;
+                _had_runtime_error = false;
             }
         }
 
@@ -93,6 +102,7 @@ namespace CsLox
         /// <param name="message">The error message</param>
         public static void Error(int line, string message)
         {
+
             Report(line, "", message);
         }
 
@@ -112,6 +122,7 @@ namespace CsLox
                 Report(token.Line, $" at '{token.Lexeme}'", message);
             }
 
+            _had_error = true;
         }
 
         public static void RuntimeError(RuntimeErrorException error)
