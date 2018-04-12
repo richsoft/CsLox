@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using System.IO;
 using CsLox.Scanning;
 using CsLox.Tokens;
-
+using CsLox.SyntaxTree;
+using CsLox.Parsing;
 
 namespace CsLox
 {
@@ -16,6 +17,7 @@ namespace CsLox
 
         static void Main(string[] args)
         {
+
             if (args.Length > 1)
             {
                 Console.WriteLine("Usage CsLox [script]");
@@ -71,22 +73,39 @@ namespace CsLox
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
 
-            // Print the tokens for now
-            foreach (Token token in tokens)
-            {
-                Console.WriteLine(token);
-            }
+            Parser parser = new Parser(tokens);
+            Expr expression = parser.Parse();
+
+            Console.WriteLine(new AstPainter().Print(expression));
 
         }
 
         /// <summary>
-        /// Raise an error message
+        /// Log a scanning error
         /// </summary>
         /// <param name="line">The line number</param>
         /// <param name="message">The error message</param>
         public static void Error(int line, string message)
         {
             Report(line, "", message);
+        }
+
+        /// <summary>
+        /// Log a parsing error
+        /// </summary>
+        /// <param name="token">The token</param>
+        /// <param name="message">The error message</param>
+        public static void Error(Token token, string message)
+        {
+            if (token.Type == TokenType.EOF)
+            {
+                Report(token.Line, " at end", message);
+            }
+            else
+            {
+                Report(token.Line, $" at '{token.Lexeme}'", message);
+            }
+
         }
 
         /// <summary>
