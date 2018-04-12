@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="AstPainter.cs" />
     <Compile Include="CsLox.cs" />
+    <Compile Include="Environments\Environment.cs" />
     <Compile Include="Exceptions\RuntimeErrorException.cs" />
     <Compile Include="ExtensionMethods\StringExtensions.cs" />
     <Compile Include="Interpreter.cs" />
@@ -57,6 +58,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="TestScripts\vardeclaration.lox">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />

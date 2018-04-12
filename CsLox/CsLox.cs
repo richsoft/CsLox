@@ -46,6 +46,8 @@ namespace CsLox
             string source = File.ReadAllText(path);
             Run(source);
 
+            Console.ReadLine();
+
             // If there was an error, exit with a error code
             if (_had_error) Environment.Exit(64);
             if (_had_runtime_error) Environment.Exit(70);

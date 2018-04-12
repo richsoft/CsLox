@@ -6,11 +6,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CsLox.Environments;
 
 namespace CsLox
 {
     class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
+
+        private Environments.Environment _environment = new Environments.Environment();
 
         /// <summary>
         /// Interpret statements
@@ -123,6 +126,21 @@ namespace CsLox
 
 
         }
+
+        public object Visit(Expr.Variable expr)
+        {
+            return _environment.Get(expr.Name);
+        }
+
+        public object Visit(Expr.Assign expr)
+        {
+            object value = Evaluate(expr.value);
+
+            _environment.Assign(expr.Name, value);
+            return value;
+
+        }
+
 
         /// <summary>
         /// Execute a statement
@@ -237,6 +255,21 @@ namespace CsLox
             Console.WriteLine(Stringify(value));
             return null;
 
+        }
+
+        public object Visit(Stmt.VarDeclaration stmt)
+        {
+            object value = null;
+
+            // Evaluate the initializer if one is set
+            if (stmt.Initializer != null)
+            {
+                value = Evaluate(stmt.Initializer);
+            }
+
+            _environment.Define(stmt.Name.Lexeme, value);
+
+            return null;
         }
     }
 }

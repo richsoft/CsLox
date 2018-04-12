@@ -16,6 +16,8 @@ namespace CsLox.SyntaxTree
             T Visit(Grouping expr);
             T Visit(Literal expr);
             T Visit(Unary expr);
+            T Visit(Variable expr);
+            T Visit(Assign expr);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -86,6 +88,39 @@ namespace CsLox.SyntaxTree
                 return visitor.Visit(this);
             }
         }
+
+        public class Variable : Expr
+        {
+            public Token Name { get; }
+
+            public Variable(Token name)
+            {
+                this.Name = name;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Assign : Expr
+        {
+            public Token Name { get; }
+            public Expr value;
+
+            public Assign(Token name, Expr value)
+            {
+                this.Name = name;
+                this.value = value;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
 
     }
 }

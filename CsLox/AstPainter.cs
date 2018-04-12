@@ -51,6 +51,16 @@ namespace CsLox
             return Parenthesise(expr.Operator.Lexeme, expr.Right);
         }
 
+        public string Visit(Expr.Variable expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Visit(Expr.Assign expr)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Build a bracketed string for the expressions
         /// </summary>

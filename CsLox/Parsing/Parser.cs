@@ -33,11 +33,50 @@ namespace CsLox.Parsing
 
             while(!IsAtEnd())
             {
-                statements.Add(Statement());
+                statements.Add(Declaration());
             }
 
             return statements;
 
+        }
+
+        /// <summary>
+        /// Parse a declaration
+        /// </summary>
+        /// <returns>The statement</returns>
+        private Stmt Declaration()
+        {
+            try
+            {
+                if (Match(TokenType.VAR)) return VarDeclaration();
+
+                return Statement();
+            }
+            catch (ParseErrorException)
+            {
+                // Try and resync if there is an error
+                Synchronise();
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Parse a variable declaration
+        /// </summary>
+        /// <returns></returns>
+        private Stmt VarDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+            // If there is a equals, the variable is initalized
+            Expr initializer = null;
+            if (Match(TokenType.EQUAL))
+            {
+                initializer = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+            return new Stmt.VarDeclaration(name, initializer);
         }
 
         /// <summary>
@@ -80,7 +119,35 @@ namespace CsLox.Parsing
         /// <returns>The expression</returns>
         private Expr Expression()
         {
-            return Equality();
+            return Assignment();
+        }
+
+        /// <summary>
+        /// Parse an assignment
+        /// </summary>
+        /// <returns></returns>
+        private Expr Assignment()
+        {
+            Expr expr = Equality();
+
+            if (Match(TokenType.EQUAL))
+            {
+                Token equals = Previous();
+                Expr value = Assignment();
+
+                // We have found a assignment target
+                // Make sure its a variable
+                if (expr is Expr.Variable)
+                {
+                    Token name = ((Expr.Variable)expr).Name;
+                    return new Expr.Assign(name, value);
+                }
+
+                Error(equals, "invalid assignment target.");
+            }
+
+            return expr;
+
         }
 
         /// <summary>
@@ -188,6 +255,11 @@ namespace CsLox.Parsing
             if (Match(TokenType.NUMBER, TokenType.STRING))
             {
                 return new Expr.Literal(Previous().Literal);
+            }
+
+            if (Match(TokenType.IDENTIFIER))
+            {
+                return new Expr.Variable(Previous());
             }
 
             if (Match(TokenType.LEFT_PAREN))

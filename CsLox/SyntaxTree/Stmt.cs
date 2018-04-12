@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CsLox.Tokens;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,7 @@ namespace CsLox.SyntaxTree
         {
             T Visit(ExpressionStatement stmt);
             T Visit(Print stmt);
+            T Visit(VarDeclaration stmt);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -38,6 +40,23 @@ namespace CsLox.SyntaxTree
             public Print(Expr expression)
             {
                 this.Expression = expression;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class VarDeclaration : Stmt
+        {
+            public Token Name { get; }
+            public Expr Initializer { get; }
+
+            public VarDeclaration(Token name, Expr initializer)
+            {
+                this.Name = name;
+                this.Initializer = initializer;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
