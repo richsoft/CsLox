@@ -14,10 +14,11 @@ namespace CsLox.Runtime
     class Resolver : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
         private readonly Interpreter _interpeter;
-        private readonly StackList<HashMap<string, bool>> _scopes = new StackList<HashMap<string, bool>>();
+        private readonly StackList<HashMap<string, bool?>> _scopes = new StackList<HashMap<string, bool?>>();
 
         private FunctionType _current_function = FunctionType.NONE;
         private ClassType _current_class = ClassType.NONE;
+        private LoopType _current_loop = LoopType.NONE;
 
         public Resolver(Interpreter interpreter)
         {
@@ -171,8 +172,29 @@ namespace CsLox.Runtime
         /// <returns></returns>
         public object Visit(Stmt.While stmt)
         {
+            LoopType enclosing_loop = _current_loop;
+            _current_loop = LoopType.WHILE;
+
             Resolve(stmt.Condition);
             Resolve(stmt.Body);
+
+            _current_loop = enclosing_loop;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolve a break statement
+        /// </summary>
+        /// <param name="stmt"></param>
+        /// <returns></returns>
+        public object Visit(Stmt.Break stmt)
+        {
+            // Make sure we are in a loop
+            if (_current_loop == LoopType.NONE)
+            {
+                CsLox.Error(stmt.Keyword, "Cannot use break outside of a loop.");
+            }
 
             return null;
         }
@@ -453,7 +475,7 @@ namespace CsLox.Runtime
         /// </summary>
         private void BeginScope()
         {
-            _scopes.Push(new HashMap<string, bool>());
+            _scopes.Push(new HashMap<string, bool?>());
         }
 
         /// <summary>
@@ -473,7 +495,7 @@ namespace CsLox.Runtime
             // Make sure there is a active scope
             if (!_scopes.Any()) return;
 
-            HashMap<string, bool> scope = _scopes.Peek();
+            HashMap<string, bool?> scope = _scopes.Peek();
 
             // Make sure we hav't already declared this variable
             if (scope.ContainsKey(name.Lexeme))
@@ -511,6 +533,12 @@ namespace CsLox.Runtime
             NONE,
             CLASS,
             SUBCLASS
+        }
+
+        private enum LoopType
+        {
+            NONE,
+            WHILE
         }
 
 

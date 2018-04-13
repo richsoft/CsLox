@@ -153,6 +153,7 @@ namespace CsLox.Parsing
         private Stmt Statement()
         {
 
+            if (Match(TokenType.BREAK)) return BreakStatement();
             if (Match(TokenType.FOR)) return ForStatement();
             if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
@@ -164,6 +165,13 @@ namespace CsLox.Parsing
             return ExpressionStatement();
         }
 
+        private Stmt BreakStatement()
+        {
+            Token keyword = Previous();
+            Consume(TokenType.SEMICOLON, "Expect ';' after break.");
+
+            return new Stmt.Break(keyword);
+        }
 
         /// <summary>
         /// Parse a return statement

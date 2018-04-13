@@ -46,6 +46,7 @@
     <Compile Include="Collections\HashMap.cs" />
     <Compile Include="Collections\StackList.cs" />
     <Compile Include="CsLox.cs" />
+    <Compile Include="Exceptions\BreakException.cs" />
     <Compile Include="Runtime\LoxClass.cs" />
     <Compile Include="Runtime\LoxEnvironment.cs" />
     <Compile Include="Exceptions\ReturnException.cs" />
@@ -67,6 +68,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="TestScripts\break-test.lox">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestScripts\class-test.lox">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

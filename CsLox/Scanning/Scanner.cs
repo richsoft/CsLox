@@ -20,6 +20,7 @@ namespace CsLox.Scanning
         private static readonly Dictionary<string, TokenType> _keywords =
             new Dictionary<string, TokenType>() {
                 {"and", TokenType.AND },
+                {"break", TokenType.BREAK },
                 {"class", TokenType.CLASS },
                 {"else", TokenType.ELSE },
                 {"false", TokenType.FALSE },

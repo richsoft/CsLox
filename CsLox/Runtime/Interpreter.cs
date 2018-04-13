@@ -454,10 +454,24 @@ namespace CsLox.Runtime
         {
             while (IsTruthy(Evaluate(stmt.Condition)))
             {
-                Execute(stmt.Body);
+                try
+                {
+                    Execute(stmt.Body);
+                }
+                catch (BreakException)
+                {
+                    // Breal out of the loop;
+                    break;
+                }
+
             }
 
             return null;
+        }
+
+        public object Visit(Stmt.Break stmt)
+        {
+            throw new BreakException();
         }
 
         public object Visit(Stmt.Function stmt)
