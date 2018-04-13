@@ -1,5 +1,4 @@
-﻿using CsLox.Environments;
-using CsLox.Exceptions;
+﻿using CsLox.Exceptions;
 using CsLox.SyntaxTree;
 using System;
 using System.Collections.Generic;

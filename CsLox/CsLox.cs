@@ -10,6 +10,7 @@ using CsLox.SyntaxTree;
 using CsLox.Parsing;
 using CsLox.Exceptions;
 using CsLox.Interpreting;
+using CsLox.Resolving;
 
 namespace CsLox
 {
@@ -92,6 +93,11 @@ namespace CsLox
 
             if (_had_error) return;
 
+            Resolver resolver = new Resolver(_interpreter);
+            resolver.Resolve(statements);
+
+            if (_had_error) return;
+
             _interpreter.Interpret(statements);
 
         }
@@ -112,7 +118,7 @@ namespace CsLox
         /// </summary>
         /// <param name="token">The token</param>
         /// <param name="message">The error message</param>
-        public static void ParseError(Token token, string message)
+        public static void Error(Token token, string message)
         {
             if (token.Type == TokenType.EOF)
             {

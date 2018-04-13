@@ -573,7 +573,7 @@ namespace CsLox.Parsing
         /// <param name="message">The error message</param>
         private ParseErrorException Error(Token token, string message)
         {
-            CsLox.ParseError(token, message);
+            CsLox.Error(token, message);
             return new ParseErrorException();
         }
 

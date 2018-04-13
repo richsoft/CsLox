@@ -6,17 +6,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CsLox.Environments;
+using CsLox.Collections;
 
 namespace CsLox.Interpreting
 {
     class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
 
-        readonly private LoxEnvironment _globals = new LoxEnvironment();
-        private LoxEnvironment _environment;
+        private readonly LoxEnvironment _globals = new LoxEnvironment();
+        private readonly HashMap<Expr, int?> _locals = new HashMap<Expr, int?>();
 
-        public LoxEnvironment Globals => _globals;
+        private LoxEnvironment _environment;
 
         public Interpreter()
         {
@@ -142,14 +142,24 @@ namespace CsLox.Interpreting
 
         public object Visit(Expr.Variable expr)
         {
-            return _environment.Get(expr.Name);
+            return LookUpVariable(expr.Name, expr);
         }
 
         public object Visit(Expr.Assign expr)
         {
             object value = Evaluate(expr.value);
 
-            _environment.Assign(expr.Name, value);
+            int? distance = _locals.Get(expr);
+            if (distance != null)
+            {
+                _environment.AssignAt(distance.Value, expr.Name, value);
+            }
+            else
+            {
+                _globals.Assign(expr.Name, value);
+            }
+
+
             return value;
 
         }
@@ -306,6 +316,27 @@ namespace CsLox.Interpreting
 
         }
 
+        /// <summary>
+        /// Look up a variable, using the correct scope
+        /// </summary>
+        /// <param name="name">The token name</param>
+        /// <param name="expr">The expression</param>
+        /// <returns></returns>
+        public object LookUpVariable(Token name, Expr expr)
+        {
+            int? distance = _locals.Get(expr);
+            if (distance != null)
+            {
+                return _environment.GetAt(distance.Value, name.Lexeme);
+            }
+            else
+            {
+                // Its global
+                return _globals.Get(name);
+            }
+
+        }
+
         public object Visit(Stmt.ExpressionStatement stmt)
         {
             Evaluate(stmt.Expression);
@@ -411,6 +442,16 @@ namespace CsLox.Interpreting
             }
 
 
+        }
+
+        /// <summary>
+        /// Resolve a variable
+        /// </summary>
+        /// <param name="expr">The expression</param>
+        /// <param name="depth">The scope depth</param>
+        public void Resolve(Expr expr, int depth)
+        {
+            _locals.Put(expr, depth);
         }
     }
 }
