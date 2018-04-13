@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CsLox.Collections;
 
-namespace CsLox.Interpreting
+namespace CsLox.Runtime
 {
     class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
@@ -208,6 +208,58 @@ namespace CsLox.Interpreting
             }
 
             return function.Call(this, arguments);
+        }
+
+        public object Visit(Expr.Get expr)
+        {
+            object obj = Evaluate(expr.Object);
+            if (obj is LoxInstance)
+            {
+                return ((LoxInstance)obj).Get(expr.Name);
+            }
+
+            throw new RuntimeErrorException(expr.Name, "Only instances has properties.");
+
+
+        }
+
+        public object Visit(Expr.Set expr)
+        {
+            object obj = Evaluate(expr.Object);
+
+            if (!(obj is LoxInstance))
+            {
+                throw new RuntimeErrorException(expr.Name, "only instances have fields.");
+            }
+
+            object value = Evaluate(expr.Value);
+            ((LoxInstance)obj).Set(expr.Name, value);
+            return value;
+        }
+
+        public object Visit(Expr.Super expr)
+        {
+            // Look up the superclass
+            int? distance = _locals.Get(expr);
+            LoxClass superclass = (LoxClass)_environment.GetAt(distance.Value, "super");
+
+            // "this" is always one level nearer than "super"
+            LoxInstance obj = (LoxInstance)_environment.GetAt(distance.Value - 1, "this");
+
+            // Lookup the method
+            LoxFunction method = superclass.FindMethod(obj, expr.Method.Lexeme);
+
+            if (method == null)
+            {
+                throw new RuntimeErrorException(expr.Method, $"Undefined property '{expr.Method.Lexeme}'.");
+            }
+
+            return method;
+        }
+
+        public object Visit(Expr.This expr)
+        {
+            return LookUpVariable(expr.Keyword, expr);
         }
 
 
@@ -410,8 +462,46 @@ namespace CsLox.Interpreting
 
         public object Visit(Stmt.Function stmt)
         {
-            LoxFunction function = new LoxFunction(stmt, _environment);
+            LoxFunction function = new LoxFunction(stmt, _environment, false);
             _environment.Define(stmt.Name.Lexeme, function);
+            return null;
+        }
+
+        public object Visit(Stmt.Class stmt)
+        {
+            _environment.Define(stmt.Name.Lexeme, null);
+
+            // Superclass
+            object superclass = null;
+            if (stmt.Superclass != null)
+            {
+                superclass = Evaluate(stmt.Superclass);
+                if (!(superclass is LoxClass))
+                {
+                    throw new RuntimeErrorException(stmt.Superclass.Name, "Superclass must be a class.");
+                }
+
+                _environment = new LoxEnvironment(_environment);
+                _environment.Define("super", superclass);
+            }
+
+
+            // Methods
+            HashMap<string, LoxFunction> methods = new HashMap<string, LoxFunction>();
+            foreach (Stmt.Function method in stmt.Methods)
+            {
+                LoxFunction function = new LoxFunction(method, _environment, method.Name.Lexeme.Equals("init"));
+                methods.Put(method.Name.Lexeme, function);
+            }
+
+            LoxClass @class = new LoxClass(stmt.Name.Lexeme, (LoxClass)superclass, methods);
+
+            if (superclass != null)
+            {
+                _environment = _environment.Enclosing;
+            }
+
+            _environment.Assign(stmt.Name, @class);
             return null;
         }
 

@@ -46,17 +46,19 @@
     <Compile Include="Collections\HashMap.cs" />
     <Compile Include="Collections\StackList.cs" />
     <Compile Include="CsLox.cs" />
-    <Compile Include="Interpreting\LoxEnvironment.cs" />
+    <Compile Include="Runtime\LoxClass.cs" />
+    <Compile Include="Runtime\LoxEnvironment.cs" />
     <Compile Include="Exceptions\ReturnException.cs" />
     <Compile Include="Exceptions\RuntimeErrorException.cs" />
     <Compile Include="ExtensionMethods\StringExtensions.cs" />
-    <Compile Include="Interpreting\ILoxCallable.cs" />
-    <Compile Include="Interpreting\Interpreter.cs" />
-    <Compile Include="Interpreting\LoxFunction.cs" />
-    <Compile Include="Interpreting\NativeFunctions\Clock.cs" />
+    <Compile Include="Runtime\ILoxCallable.cs" />
+    <Compile Include="Runtime\Interpreter.cs" />
+    <Compile Include="Runtime\LoxFunction.cs" />
+    <Compile Include="Runtime\LoxInstance.cs" />
+    <Compile Include="Runtime\NativeFunctions\Clock.cs" />
     <Compile Include="Parsing\Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Resolving\Resolver.cs" />
+    <Compile Include="Runtime\Resolver.cs" />
     <Compile Include="Scanning\Scanner.cs" />
     <Compile Include="SyntaxTree\Expr.cs" />
     <Compile Include="SyntaxTree\Stmt.cs" />
@@ -65,10 +67,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="TestScripts\class-test.lox">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestScripts\fib.lox">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestScripts\hellofunction.lox">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestScripts\inheritance.lox">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestScripts\recursive-fib.lox">

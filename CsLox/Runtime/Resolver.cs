@@ -1,5 +1,5 @@
 ﻿using CsLox.Collections;
-using CsLox.Interpreting;
+using CsLox.Runtime;
 using CsLox.SyntaxTree;
 using CsLox.Tokens;
 using CsLox.ExtensionMethods;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CsLox.Resolving
+namespace CsLox.Runtime
 {
     class Resolver : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
@@ -17,6 +17,7 @@ namespace CsLox.Resolving
         private readonly StackList<HashMap<string, bool>> _scopes = new StackList<HashMap<string, bool>>();
 
         private FunctionType _current_function = FunctionType.NONE;
+        private ClassType _current_class = ClassType.NONE;
 
         public Resolver(Interpreter interpreter)
         {
@@ -58,7 +59,7 @@ namespace CsLox.Resolving
         /// <param name="expr">The expression</param>
         public object Visit(Expr.Variable expr)
         {
-            if (_scopes.IsEmpty() && _scopes.Peek().Get(expr.Name.Lexeme) == false)
+            if (!_scopes.IsEmpty() && _scopes.Peek().Get(expr.Name.Lexeme) == false)
             {
                 CsLox.Error(expr.Name, "Cannot read local variable in its own initializer.");
             }
@@ -83,7 +84,7 @@ namespace CsLox.Resolving
         }
 
         /// <summary>
-        /// Bind and resolve a function declaration
+        /// Resolve a function declaration
         /// </summary>
         /// <param name="stmt">The statement</param>
         public object Visit(Stmt.Function stmt)
@@ -152,6 +153,12 @@ namespace CsLox.Resolving
 
             if (stmt.Value != null)
             {
+                // Check this is not in a initializer
+                if (_current_function == FunctionType.INITIALIZER)
+                {
+                    CsLox.Error(stmt.Keyword, "Cannot return from an initializer.");
+                }
+
                 Resolve(stmt.Value);
             }
             return null;
@@ -201,6 +208,50 @@ namespace CsLox.Resolving
         }
 
         /// <summary>
+        /// Resolve a property get
+        /// </summary>
+        /// <param name="expr">The expression</param>
+        /// <returns></returns>
+        public object Visit(Expr.Get expr)
+        {
+            Resolve(expr.Object);
+            return null;
+        }
+
+        /// <summary>
+        /// Resolve a property set
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public object Visit(Expr.Set expr)
+        {
+            Resolve(expr.Value);
+            Resolve(expr.Object);
+            return null;
+        }
+
+        /// <summary>
+        /// Resolve a superclass access
+        /// </summary>
+        /// <param name="expr">The expression</param>
+        public object Visit(Expr.Super expr)
+        {
+            if (_current_class == ClassType.NONE)
+            {
+                CsLox.Error(expr.keyword, "Cannot use 'super' outside of a class.");
+            }
+            else if (_current_class != ClassType.SUBCLASS)
+            {
+                CsLox.Error(expr.keyword, "Cannot use 'super' in a class with no superclass.");
+            }
+
+
+
+            ResolveLocal(expr, expr.keyword);
+            return null;
+        }
+
+        /// <summary>
         /// Resolve a grouping expression
         /// </summary>
         /// <param name="expr">The expression</param>
@@ -244,6 +295,81 @@ namespace CsLox.Resolving
         {
             Resolve(expr.Right);
 
+            return null;
+        }
+
+        /// <summary>
+        /// Resolve a class declaration
+        /// </summary>
+        /// <param name="stmt">The statement</param>
+        /// <returns></returns>
+        public object Visit(Stmt.Class stmt)
+        {
+            Declare(stmt.Name);
+            Define(stmt.Name);
+
+            ClassType enclosing_class = _current_class;
+            _current_class = ClassType.CLASS;
+
+            // Superclass
+            if (stmt.Superclass != null)
+            {
+                _current_class = ClassType.SUBCLASS;
+                Resolve(stmt.Superclass);
+
+                // Create a new super class scope
+                BeginScope();
+                _scopes.Peek().Put("super", true);
+
+
+            }
+
+
+            // This
+            BeginScope();
+            _scopes.Peek().Put("this", true);
+
+            // Methods
+            foreach(Stmt.Function method in stmt.Methods)
+            {
+                FunctionType declaration = FunctionType.METHOD;
+
+                // Check if this is the initalizer
+                if (method.Name.Lexeme.Equals("init"))
+                {
+                    declaration = FunctionType.INITIALIZER;
+                }
+
+                ResolveFunction(method, declaration);
+            }
+
+            EndScope();
+
+            // If we have a superclass, we need to end that scope too
+            if (stmt.Superclass != null)
+            {
+                EndScope();
+            }
+
+            _current_class = enclosing_class;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolve this
+        /// </summary>
+        /// <param name="expr">The expression</param>
+        /// <returns></returns>
+        public object Visit(Expr.This expr)
+        {
+            // Make sure we are in a class
+            if (_current_class == ClassType.NONE)
+            {
+                CsLox.Error(expr.Keyword, "Cannot use 'this' outside of a class.");
+            }
+
+            ResolveLocal(expr, expr.Keyword);
             return null;
         }
 
@@ -299,7 +425,7 @@ namespace CsLox.Resolving
 
 
         /// <summary>
-        /// Resolve a function, creating a scope and binding its parameters
+        /// Resolve a function, creating a scope and its parameters
         /// </summary>
         /// <param name="function">The function</param>
         private void ResolveFunction(Stmt.Function function, FunctionType type)
@@ -375,7 +501,16 @@ namespace CsLox.Resolving
         private enum FunctionType
         {
             NONE,
-            FUNCTION
+            FUNCTION,
+            INITIALIZER,
+            METHOD
+        }
+
+        private enum ClassType
+        {
+            NONE,
+            CLASS,
+            SUBCLASS
         }
 
 

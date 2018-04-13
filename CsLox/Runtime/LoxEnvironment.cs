@@ -7,22 +7,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CsLox.Interpreting
+namespace CsLox.Runtime
 {
     class LoxEnvironment
     {
 
-        private readonly LoxEnvironment _enclosing;
         private readonly HashMap<string, object> _values = new HashMap<string, object>();
+
+        public LoxEnvironment Enclosing {get;}
 
         public LoxEnvironment()
         {
-            _enclosing = null;
+            this.Enclosing = null;
         }
 
         public LoxEnvironment(LoxEnvironment enclosing)
         {
-            _enclosing = enclosing;
+            this.Enclosing = enclosing;
         }
 
 
@@ -49,9 +50,9 @@ namespace CsLox.Interpreting
             }
 
             // Check the parent environment
-            if (_enclosing != null)
+            if (this.Enclosing != null)
             {
-                return _enclosing.Get(name);
+                return this.Enclosing.Get(name);
             }
 
             throw new RuntimeErrorException(name, $"Undefined variable '{name.Lexeme}'.");
@@ -82,9 +83,9 @@ namespace CsLox.Interpreting
             }
 
             // Check the parent
-            if (_enclosing != null)
+            if (this.Enclosing != null)
             {
-                _enclosing.Assign(name, value);
+                this.Enclosing.Assign(name, value);
                 return;
             }
 
@@ -107,7 +108,7 @@ namespace CsLox.Interpreting
             LoxEnvironment environment = this;
             for (int i =0; i < distance; i++)
             { 
-                environment = environment._enclosing;
+                environment = environment.Enclosing;
             }
 
             return environment;

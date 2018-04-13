@@ -48,6 +48,7 @@ namespace CsLox.Parsing
         {
             try
             {
+                if (Match(TokenType.CLASS)) return ClassDeclaration();
                 if (Match(TokenType.FUN)) return Function("function");
                 if (Match(TokenType.VAR)) return VarDeclaration();
 
@@ -61,7 +62,42 @@ namespace CsLox.Parsing
             }
         }
 
-        private Stmt Function(string kind)
+        /// <summary>
+        /// Parse a class declaration
+        /// </summary>
+        private Stmt ClassDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect class name");
+
+            // Superclass
+            Expr.Variable superclass = null;
+            if (Match(TokenType.LESS))
+            {
+                Consume(TokenType.IDENTIFIER, "Expect superclass name.");
+                superclass = new Expr.Variable(Previous());
+            }
+
+
+            // Body
+            Consume(TokenType.LEFT_BRACE, "Expect '{' before class body");
+            List<Stmt.Function> methods = new List<Stmt.Function>();
+            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                methods.Add((Stmt.Function)Function("method"));
+            }
+
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+            return new Stmt.Class(name, superclass, methods);
+        }
+
+
+        /// <summary>
+        /// Parse a function declaration
+        /// </summary>
+        /// <param name="kind"></param>
+        /// <returns></returns>
+        private Stmt.Function Function(string kind)
         {
             Token name = Consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
 
@@ -136,7 +172,7 @@ namespace CsLox.Parsing
         private Stmt ReturnStatement()
         {
             Token keyword = Previous();
-            
+
             // If not return value is set, make it nil
             Expr value = null;
             if (!Check(TokenType.SEMICOLON))
@@ -329,8 +365,13 @@ namespace CsLox.Parsing
                     Token name = ((Expr.Variable)expr).Name;
                     return new Expr.Assign(name, value);
                 }
+                else if (expr is Expr.Get)
+                {
+                    Expr.Get get = (Expr.Get)expr;
+                    return new Expr.Set(get.Object, get.Name, value);
+                }
 
-                Error(equals, "invalid assignment target.");
+                Error(equals, "Invalid assignment target.");
             }
 
             return expr;
@@ -477,7 +518,14 @@ namespace CsLox.Parsing
             {
                 if (Match(TokenType.LEFT_PAREN))
                 {
+                    // Function call
                     expr = FinishCall(expr);
+                }
+                else if (Match(TokenType.DOT))
+                {
+                    // Property
+                    Token name = Consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+                    expr = new Expr.Get(expr, name);
                 }
                 else
                 {
@@ -532,6 +580,19 @@ namespace CsLox.Parsing
             {
                 return new Expr.Literal(Previous().Literal);
             }
+
+            if (Match(TokenType.SUPER))
+            {
+                Token keyword = Previous();
+                Consume(TokenType.DOT, "Expect '.' after 'super'.");
+                Token method = Consume(TokenType.IDENTIFIER, "Expect superclass method name.");
+
+                return new Expr.Super(keyword, method);
+
+            }
+
+
+            if (Match(TokenType.THIS)) return new Expr.This(Previous());
 
             if (Match(TokenType.IDENTIFIER))
             {

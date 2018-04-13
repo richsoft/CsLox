@@ -71,6 +71,26 @@ namespace CsLox
             throw new NotImplementedException();
         }
 
+        public string Visit(Expr.Get expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Visit(Expr.Set expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Visit(Expr.This expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Visit(Expr.Super expr)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Build a bracketed string for the expressions
         /// </summary>

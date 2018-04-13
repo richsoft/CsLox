@@ -20,6 +20,10 @@ namespace CsLox.SyntaxTree
             T Visit(Assign expr);
             T Visit(Logical expr);
             T Visit(Call expr);
+            T Visit(Get expr);
+            T Visit(Set expr);
+            T Visit(This expr);
+            T Visit(Super expr);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -160,6 +164,75 @@ namespace CsLox.SyntaxTree
                 return visitor.Visit(this);
             }
 
+        }
+
+        public class Get : Expr
+        {
+            public Expr Object { get; }
+            public Token Name { get; }
+
+            public Get(Expr obj, Token name)
+            {
+                this.Object = obj;
+                this.Name = name;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Set : Expr
+        {
+            public Expr Object { get; }
+            public Token Name { get; }
+            public Expr Value { get; }
+
+            public Set(Expr obj, Token name, Expr value)
+            {
+                this.Object = obj;
+                this.Name = name;
+                this.Value = value;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class This : Expr
+        {
+            public Token Keyword { get; }
+
+            public This(Token keyword)
+            {
+                this.Keyword = keyword;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+
+        }
+
+        public class Super : Expr
+        {
+            public Token keyword { get; }
+            public Token Method { get; }
+
+            public Super(Token keyword, Token method)
+            {
+                this.keyword = keyword;
+                this.Method = method;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
         }
     }
 }
