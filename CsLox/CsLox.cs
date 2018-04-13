@@ -9,6 +9,7 @@ using CsLox.Tokens;
 using CsLox.SyntaxTree;
 using CsLox.Parsing;
 using CsLox.Exceptions;
+using CsLox.Interpreting;
 
 namespace CsLox
 {

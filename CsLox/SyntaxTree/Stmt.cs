@@ -15,8 +15,10 @@ namespace CsLox.SyntaxTree
             T Visit(Print stmt);
             T Visit(VarDeclaration stmt);
             T Visit(Block stmt);
+            T Visit(Function stmt);
             T Visit(If stmt);
             T Visit(While stmt);
+            T Visit(Return stmt);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -117,6 +119,43 @@ namespace CsLox.SyntaxTree
             {
                 return visitor.Visit(this);
             }
+        }
+
+        public class Function : Stmt
+        {
+            public Token Name { get; }
+            public IList<Token> Parameters { get; }
+            public IList<Stmt> Body { get; }
+
+            public Function(Token name, IList<Token> parameters, IList<Stmt> body)
+            {
+                this.Name = name;
+                this.Parameters = parameters;
+                this.Body = body;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Return : Stmt
+        {
+            public Token Keyword { get; }
+            public Expr Value { get; }
+
+            public Return (Token keyword, Expr value)
+            {
+                this.Keyword = keyword;
+                this.Value = value;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+
         }
 
     }

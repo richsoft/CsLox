@@ -48,6 +48,7 @@ namespace CsLox.Parsing
         {
             try
             {
+                if (Match(TokenType.FUN)) return Function("function");
                 if (Match(TokenType.VAR)) return VarDeclaration();
 
                 return Statement();
@@ -58,6 +59,36 @@ namespace CsLox.Parsing
                 Synchronise();
                 return null;
             }
+        }
+
+        private Stmt Function(string kind)
+        {
+            Token name = Consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
+
+            // Parameters
+            Consume(TokenType.LEFT_PAREN, $"Expect '(' after {kind} name.");
+            List<Token> parameters = new List<Token>();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (parameters.Count() >= 8)
+                    {
+                        Error(Peek(), "Cannot have more than 8 parameters");
+                    }
+
+                    parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+                }
+                while (Match(TokenType.COMMA));
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+            // Body
+            Consume(TokenType.LEFT_BRACE, $"Expect '{{' before {kind} body.");
+            List<Stmt> body = Block();
+
+            return new Stmt.Function(name, parameters, body);
+
         }
 
         /// <summary>
@@ -85,15 +116,38 @@ namespace CsLox.Parsing
         /// <returns>The statement</returns>
         private Stmt Statement()
         {
+
             if (Match(TokenType.FOR)) return ForStatement();
             if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.RETURN)) return ReturnStatement();
             if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new Stmt.Block(Block());
 
 
             return ExpressionStatement();
         }
+
+
+        /// <summary>
+        /// Parse a return statement
+        /// </summary>
+        /// <returns>The statement</returns>
+        private Stmt ReturnStatement()
+        {
+            Token keyword = Previous();
+            
+            // If not return value is set, make it nil
+            Expr value = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                value = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+            return new Stmt.Return(keyword, value);
+        }
+
 
         /// <summary>
         /// Parse a for loop
@@ -407,7 +461,60 @@ namespace CsLox.Parsing
                 return new Expr.Unary(op, right);
             }
 
-            return Primary();
+            return Call();
+
+        }
+
+        /// <summary>
+        /// Parse a function call
+        /// </summary>
+        /// <returns>The expression</returns>
+        private Expr Call()
+        {
+            Expr expr = Primary();
+
+            while (true)
+            {
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    expr = FinishCall(expr);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return expr;
+        }
+
+        /// <summary>
+        /// Helper for calling functions
+        /// </summary>
+        /// <param name="callee">The callee</param>
+        /// <returns>The expression</returns>
+        private Expr FinishCall(Expr callee)
+        {
+            List<Expr> arguments = new List<Expr>();
+
+            // Find any arguments
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (arguments.Count() >= 8)
+                    {
+                        Error(Peek(), "Cannot have more than 8 arguments");
+                    }
+
+                    arguments.Add(Expression());
+                }
+                while (Match(TokenType.COMMA));
+            }
+
+            Token paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+            return new Expr.Call(callee, paren, arguments);
 
         }
 
@@ -504,7 +611,7 @@ namespace CsLox.Parsing
         }
 
         /// <summary>
-        /// Consume and return the current token
+        /// Consume and return the next token
         /// </summary>
         /// <returns>The current token</returns>
         private Token Advance()
@@ -527,7 +634,7 @@ namespace CsLox.Parsing
         }
 
         /// <summary>
-        /// Peek the next token wihout consuming it
+        /// Peek the next token without consuming it
         /// </summary>
         /// <returns>The next token</returns>
         private Token Peek()
@@ -536,7 +643,7 @@ namespace CsLox.Parsing
         }
 
         /// <summary>
-        /// Look at the current token
+        /// The last consumed token
         /// </summary>
         /// <returns>The current token</returns>
         private Token Previous()
@@ -582,5 +689,9 @@ namespace CsLox.Parsing
 
         private class ParseErrorException : Exception { }
 
+        private enum FunctionKind
+        {
+            FUNCTION
+        }
     }
 }

@@ -8,12 +8,25 @@ using System.Text;
 using System.Threading.Tasks;
 using CsLox.Environments;
 
-namespace CsLox
+namespace CsLox.Interpreting
 {
     class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
 
-        private LoxEnvironment _environment = new LoxEnvironment();
+        readonly private LoxEnvironment _globals = new LoxEnvironment();
+        private LoxEnvironment _environment;
+
+        public LoxEnvironment Globals => _globals;
+
+        public Interpreter()
+        {
+            // We need to set this here in C#
+            _environment = _globals;
+
+            // Add some native functions
+            _globals.Define("clock", new NativeFunctions.Clock());
+        }
+
 
         /// <summary>
         /// Interpret statements
@@ -160,6 +173,33 @@ namespace CsLox
             return Evaluate(expr.Right);
         }
 
+        public object Visit(Expr.Call expr)
+        {
+            object callee = Evaluate(expr.Callee);
+
+            List<object> arguments = new List<object>();
+            foreach (Expr arg in expr.Arguments)
+            {
+                arguments.Add(Evaluate(arg));
+            }
+
+            // Make sure we the callee is actually callable
+            if (!(callee is ILoxCallable))
+            {
+                throw new RuntimeErrorException(expr.Paren, "Can only call functions and classes.");
+            }
+
+            ILoxCallable function = (ILoxCallable)callee;
+
+            // Make sure we are passing the correct number of arguments
+            if (arguments.Count() != function.Arity)
+            {
+                throw new RuntimeErrorException(expr.Paren, $"Expected {function.Arity} argumuments, but got {arguments.Count()}.");
+            }
+
+            return function.Call(this, arguments);
+        }
+
 
         /// <summary>
         /// Execute a statement
@@ -167,7 +207,10 @@ namespace CsLox
         /// <param name="stmt">The statement</param>
         private void Execute(Stmt stmt)
         {
-            stmt.Accept(this);
+            if (stmt != null)
+            {
+                stmt.Accept(this);
+            }
         }
 
         /// <summary>
@@ -250,7 +293,8 @@ namespace CsLox
 
             // Doubles
             // If this in an integer, don't show the decimal
-            if (obj is double) {
+            if (obj is double)
+            {
                 if ((double)obj % 1 == 0)
                 {
                     return ((double)obj).ToString("0");
@@ -274,6 +318,18 @@ namespace CsLox
             Console.WriteLine(Stringify(value));
             return null;
 
+        }
+
+        public object Visit(Stmt.Return stmt)
+        {
+            // Set to null if nothing returned
+            object value = null;
+            if (stmt.Value != null)
+            {
+                value = Evaluate(stmt.Value);
+            }
+
+            throw new ReturnException(value);
         }
 
         public object Visit(Stmt.VarDeclaration stmt)
@@ -321,8 +377,19 @@ namespace CsLox
             return null;
         }
 
+        public object Visit(Stmt.Function stmt)
+        {
+            LoxFunction function = new LoxFunction(stmt, _environment);
+            _environment.Define(stmt.Name.Lexeme, function);
+            return null;
+        }
 
-        private void ExecuteBlock(IEnumerable<Stmt> statements, LoxEnvironment environment)
+        /// <summary>
+        /// Ececute a block of statements
+        /// </summary>
+        /// <param name="statements">The statements</param>
+        /// <param name="environment">The environment</param>
+        public void ExecuteBlock(IEnumerable<Stmt> statements, LoxEnvironment environment)
         {
             // Save the current environment
             LoxEnvironment previous = this._environment;

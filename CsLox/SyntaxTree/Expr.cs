@@ -19,6 +19,7 @@ namespace CsLox.SyntaxTree
             T Visit(Variable expr);
             T Visit(Assign expr);
             T Visit(Logical expr);
+            T Visit(Call expr);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -141,6 +142,24 @@ namespace CsLox.SyntaxTree
             }
         }
 
+        public class Call : Expr
+        {
+            public Expr Callee { get; }
+            public Token Paren { get; }
+            public IList<Expr> Arguments { get; }
 
+            public Call(Expr callee, Token paren, IList<Expr> arguments)
+            {
+                this.Callee = callee;
+                this.Paren = paren;
+                this.Arguments = arguments;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+
+        }
     }
 }
