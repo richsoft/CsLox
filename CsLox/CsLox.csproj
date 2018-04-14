@@ -47,6 +47,7 @@
     <Compile Include="Collections\StackList.cs" />
     <Compile Include="CsLox.cs" />
     <Compile Include="Exceptions\BreakException.cs" />
+    <Compile Include="Exceptions\ContinueException.cs" />
     <Compile Include="Runtime\LoxClass.cs" />
     <Compile Include="Runtime\LoxEnvironment.cs" />
     <Compile Include="Exceptions\ReturnException.cs" />
@@ -72,6 +73,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestScripts\class-test.lox">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestScripts\do-test.lox">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestScripts\fib.lox">

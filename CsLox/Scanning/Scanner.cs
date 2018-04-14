@@ -22,6 +22,8 @@ namespace CsLox.Scanning
                 {"and", TokenType.AND },
                 {"break", TokenType.BREAK },
                 {"class", TokenType.CLASS },
+                {"continue", TokenType.CONTINUE },
+                {"do", TokenType.DO },
                 {"else", TokenType.ELSE },
                 {"false", TokenType.FALSE },
                 {"for", TokenType.FOR },

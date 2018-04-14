@@ -13,6 +13,7 @@ namespace CsLox.Parsing
     {
         private readonly List<Token> _tokens;
         private int _current = 0;
+        private int _loop_depth = 0;
 
         /// <summary>
         /// Create a new Parser instance
@@ -153,7 +154,10 @@ namespace CsLox.Parsing
         private Stmt Statement()
         {
 
+
             if (Match(TokenType.BREAK)) return BreakStatement();
+            if (Match(TokenType.CONTINUE)) return ContinueStatement();
+            if (Match(TokenType.DO)) return DoStatement();
             if (Match(TokenType.FOR)) return ForStatement();
             if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
@@ -165,12 +169,28 @@ namespace CsLox.Parsing
             return ExpressionStatement();
         }
 
+        private Stmt ContinueStatement()
+        {
+            if (_loop_depth == 0)
+            {
+                Error(Previous(), "Cannot use 'continue' outside of a loop.");
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after continue.");
+
+            return new Stmt.Continue();
+        }
+
         private Stmt BreakStatement()
         {
-            Token keyword = Previous();
+            if (_loop_depth == 0)
+            {
+                Error(Previous(), "Cannot use 'continue' outside of a loop.");
+            }
+
             Consume(TokenType.SEMICOLON, "Expect ';' after break.");
 
-            return new Stmt.Break(keyword);
+            return new Stmt.Break();
         }
 
         /// <summary>
@@ -192,6 +212,45 @@ namespace CsLox.Parsing
             return new Stmt.Return(keyword, value);
         }
 
+        private Stmt DoStatement()
+        {
+            _loop_depth++;
+
+            try
+            {
+
+                // Body must be a block
+                Consume(TokenType.LEFT_BRACE, "Expect '{' after do.");
+                List<Stmt> body = Block();
+
+                // While
+                Consume(TokenType.WHILE, "Expect 'while' after do loop body.");
+
+                // Condition
+                Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while.");
+                Expr condition = Expression();
+                Consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
+                Consume(TokenType.SEMICOLON, "Expect ';' after while condition.");
+
+
+                // Convert to while loop
+                // while (true) {
+                //      ...body...
+                //      if (condition) {
+                //      } else {
+                //          break;
+                //      }
+                // } 
+
+                body.Add(new Stmt.If(condition, new Stmt.Block(new Stmt[]{ }), new Stmt.Break()));
+
+                return new Stmt.While(new Expr.Literal(true), new Stmt.Block(body));
+            }
+            finally
+            {
+                _loop_depth--;
+            }
+        }
 
         /// <summary>
         /// Parse a for loop
@@ -199,67 +258,80 @@ namespace CsLox.Parsing
         /// <returns>The statement</returns>
         private Stmt ForStatement()
         {
-            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+            _loop_depth++;
 
-            // Initializer
-
-            Stmt initializer;
-            if (Match(TokenType.SEMICOLON))
+            try
             {
-                // No initialiser
-                initializer = null;
+
+                Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+                // Initializer
+
+                Stmt initializer;
+                if (Match(TokenType.SEMICOLON))
+                {
+                    // No initialiser
+                    initializer = null;
+                }
+                else if (Match(TokenType.VAR))
+                {
+                    // Its a variable decalration
+                    initializer = VarDeclaration();
+                }
+                else
+                {
+                    // Its an expression
+                    // This must be a _statement_
+                    initializer = ExpressionStatement();
+                }
+
+                // Condition
+                Expr condition = null;
+                if (!Check(TokenType.SEMICOLON))
+                {
+                    condition = Expression();
+                }
+                Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+                // Increment
+                Expr increment = null;
+                if (!Check(TokenType.SEMICOLON))
+                {
+                    increment = Expression();
+                }
+                Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+                // Body
+                Stmt body = Statement();
+
+                // Convert to a while loop
+                if (increment != null)
+                {
+                    body = new Stmt.Block(new[] { body, new Stmt.ExpressionStatement(increment) });
+                }
+
+                if (condition == null)
+                {
+                    // No condition, so set to true
+                    condition = new Expr.Literal(true);
+                }
+
+                body = new Stmt.While(condition, body);
+
+                if (initializer != null)
+                {
+                    body = new Stmt.Block(new[] { initializer, body });
+                }
+
+                return body;
+
             }
-            else if (Match(TokenType.VAR))
+            finally
             {
-                // Its a variable decalration
-                initializer = VarDeclaration();
-            }
-            else
-            {
-                // Its an expression
-                // This must be a _statement_
-                initializer = ExpressionStatement();
+                _loop_depth--;
             }
 
-            // Condition
-            Expr condition = null;
-            if (!Check(TokenType.SEMICOLON))
-            {
-                condition = Expression();
-            }
-            Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
 
-            // Increment
-            Expr increment = null;
-            if (!Check(TokenType.SEMICOLON))
-            {
-                increment = Expression();
-            }
-            Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
-
-            // Body
-            Stmt body = Statement();
-
-            // Convert to a while loop
-            if (increment != null)
-            {
-                body = new Stmt.Block(new[] { body, new Stmt.ExpressionStatement(increment) });
-            }
-
-            if (condition == null)
-            {
-                // No condition, so set to true
-                condition = new Expr.Literal(true);
-            }
-
-            body = new Stmt.While(condition, body);
-
-            if (initializer != null)
-            {
-                body = new Stmt.Block(new[] { initializer, body });
-            }
-
-            return body;
 
         }
 
@@ -270,12 +342,22 @@ namespace CsLox.Parsing
         /// <returns>The statement</returns>
         private Stmt WhileStatement()
         {
-            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while.");
-            Expr condition = Expression();
-            Consume(TokenType.RIGHT_PAREN, "Expect '(' after while condition.");
-            Stmt body = Statement();
+            _loop_depth++;
 
-            return new Stmt.While(condition, body);
+            try
+            {
+                Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while.");
+                Expr condition = Expression();
+                Consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
+                Stmt body = Statement();
+
+                return new Stmt.While(condition, body);
+            }
+            finally
+            {
+                _loop_depth--;
+            }
+
 
         }
 

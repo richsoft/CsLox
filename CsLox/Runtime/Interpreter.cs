@@ -92,11 +92,23 @@ namespace CsLox.Runtime
                         return (string)left + (string)right;
                     }
 
+                    // Allow numbers to be concatinated to strings
+                    if (left is string || right is string)
+                    {
+                        return Stringify(left) + Stringify(right);
+                    }
+
                     // Can't add numbers and strings
-                    throw new RuntimeErrorException(expr.Operator, "Operands must be tow numbers or two strings.");
+                    throw new RuntimeErrorException(expr.Operator, "Operands must be two numbers or two strings.");
 
                 case TokenType.SLASH:
                     CheckNumberOperands(expr.Operator, left, right);
+
+                    if ((double)right == 0)
+                    {
+                        throw new RuntimeErrorException(expr.Operator, "Division by zero.");
+                    }
+
                     return (double)left / (double)right;
 
                 case TokenType.STAR:
@@ -460,13 +472,24 @@ namespace CsLox.Runtime
                 }
                 catch (BreakException)
                 {
-                    // Breal out of the loop;
+                    // Break out of the loop;
                     break;
+                }
+                catch (ContinueException)
+                {
+                    // Continue the next iteration
+                    continue;
                 }
 
             }
 
             return null;
+        }
+
+        public object Visit(Stmt.Continue stmt)
+        {
+            // Throw a 'continue' exception - a little wierd!
+            throw new ContinueException();
         }
 
         public object Visit(Stmt.Break stmt)

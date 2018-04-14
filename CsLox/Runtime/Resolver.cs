@@ -18,7 +18,6 @@ namespace CsLox.Runtime
 
         private FunctionType _current_function = FunctionType.NONE;
         private ClassType _current_class = ClassType.NONE;
-        private LoopType _current_loop = LoopType.NONE;
 
         public Resolver(Interpreter interpreter)
         {
@@ -172,14 +171,20 @@ namespace CsLox.Runtime
         /// <returns></returns>
         public object Visit(Stmt.While stmt)
         {
-            LoopType enclosing_loop = _current_loop;
-            _current_loop = LoopType.WHILE;
 
             Resolve(stmt.Condition);
             Resolve(stmt.Body);
 
-            _current_loop = enclosing_loop;
+            return null;
+        }
 
+        /// <summary>
+        /// Resolve a continue statement
+        /// </summary>
+        /// <param name="stmt">The statement</param>
+        /// <returns></returns>
+        public object Visit(Stmt.Continue stmt)
+        {
             return null;
         }
 
@@ -190,12 +195,7 @@ namespace CsLox.Runtime
         /// <returns></returns>
         public object Visit(Stmt.Break stmt)
         {
-            // Make sure we are in a loop
-            if (_current_loop == LoopType.NONE)
-            {
-                CsLox.Error(stmt.Keyword, "Cannot use break outside of a loop.");
-            }
-
+            
             return null;
         }
 
@@ -533,12 +533,6 @@ namespace CsLox.Runtime
             NONE,
             CLASS,
             SUBCLASS
-        }
-
-        private enum LoopType
-        {
-            NONE,
-            WHILE
         }
 
 

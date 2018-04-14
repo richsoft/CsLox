@@ -21,6 +21,7 @@ namespace CsLox.SyntaxTree
             T Visit(Return stmt);
             T Visit(Class stmt);
             T Visit(Break stmt);
+            T Visit(Continue stmt);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
@@ -182,12 +183,15 @@ namespace CsLox.SyntaxTree
 
         public class Break : Stmt
         {
-            public Token Keyword { get; }
 
-            public Break(Token keyword)
+            public override T Accept<T>(IVisitor<T> visitor)
             {
-                this.Keyword = keyword;
+                return visitor.Visit(this);
             }
+        }
+
+        public class Continue : Stmt
+        {
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
