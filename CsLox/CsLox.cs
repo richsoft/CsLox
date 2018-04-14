@@ -11,6 +11,7 @@ using CsLox.Parsing;
 using CsLox.Exceptions;
 using CsLox.Runtime;
 using CsLox.ErrorHandlers;
+using System.Threading;
 
 namespace CsLox
 {
@@ -65,18 +66,15 @@ namespace CsLox
         /// </summary>
         private static void RunPrompt()
         {
-            bool stop = false;
-
-            Console.CancelKeyPress += (sender, e) =>
-            {
-                stop = true;
-                e.Cancel = true;
-            };
-
-            while (!stop)
+            while (true)
             {
                 Console.Write("> ");
-                Run(Console.ReadLine());
+
+                string code = Console.ReadLine();
+
+                if (code == null) break;
+
+                Run(code);
 
                 // Reset the error flag
                 _error_handler.Reset();
