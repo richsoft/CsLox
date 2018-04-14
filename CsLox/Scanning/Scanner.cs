@@ -5,11 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using CsLox.Tokens;
 using CsLox.ExtensionMethods;
+using CsLox.ErrorHandlers;
 
 namespace CsLox.Scanning
 {
     class Scanner
     {
+        private readonly IErrorHandler _error_handler;
         private readonly string _source;
         private readonly List<Token> _tokens = new List<Token>();
 
@@ -44,9 +46,10 @@ namespace CsLox.Scanning
         /// Create a new instance of the scanner
         /// </summary>
         /// <param name="source">The source</param>
-        public Scanner(string source)
+        public Scanner(string source, IErrorHandler error_handler)
         {
             this._source = source;
+            this._error_handler = error_handler;
         }
 
         /// <summary>
@@ -140,7 +143,7 @@ namespace CsLox.Scanning
                     }
                     else
                     {
-                        CsLox.Error(_line, $"Unexpected character: '{c}'.");
+                        _error_handler.Error(_line, $"Unexpected character: '{c}'.");
                     }
                     break;
             }
@@ -220,7 +223,7 @@ namespace CsLox.Scanning
             // Check the string was terminated
             if (IsAtEnd())
             {
-                CsLox.Error(_line, "Unterminated string.");
+                _error_handler.Error(_line, "Unterminated string.");
                 return;
             }
 

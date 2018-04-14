@@ -7,19 +7,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CsLox.Collections;
+using CsLox.ErrorHandlers;
 
 namespace CsLox.Runtime
 {
     class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
-
+        private readonly IErrorHandler _error_handler;
         private readonly LoxEnvironment _globals = new LoxEnvironment();
         private readonly HashMap<Expr, int?> _locals = new HashMap<Expr, int?>();
 
         private LoxEnvironment _environment;
 
-        public Interpreter()
+        public Interpreter(IErrorHandler error_handler)
         {
+            _error_handler = error_handler;
+
             // We need to set this here in C#
             _environment = _globals;
 
@@ -43,7 +46,7 @@ namespace CsLox.Runtime
             }
             catch (RuntimeErrorException ex)
             {
-                CsLox.RuntimeError(ex);
+                _error_handler.Error(ex);
             }
         }
 

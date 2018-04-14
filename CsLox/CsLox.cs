@@ -10,15 +10,21 @@ using CsLox.SyntaxTree;
 using CsLox.Parsing;
 using CsLox.Exceptions;
 using CsLox.Runtime;
+using CsLox.ErrorHandlers;
 
 namespace CsLox
 {
     class CsLox
     {
-        private static readonly Interpreter _interpreter = new Interpreter();
+        private static readonly Interpreter _interpreter;
+        private static readonly IErrorHandler _error_handler;
 
-        static bool _had_error = false;
-        static bool _had_runtime_error = false;
+        static CsLox()
+        {
+            _error_handler = new ConsoleErrorHandler();
+            _interpreter = new Interpreter(_error_handler);
+        }
+
 
         static void Main(string[] args)
         {
@@ -50,8 +56,8 @@ namespace CsLox
             Console.ReadLine();
 
             // If there was an error, exit with a error code
-            if (_had_error) Environment.Exit(64);
-            if (_had_runtime_error) Environment.Exit(70);
+            if (_error_handler.SyntaxError) Environment.Exit(64);
+            if (_error_handler.RuntimeError) Environment.Exit(70);
         }
 
         /// <summary>
@@ -73,8 +79,7 @@ namespace CsLox
                 Run(Console.ReadLine());
 
                 // Reset the error flag
-                _had_error = false;
-                _had_runtime_error = false;
+                _error_handler.Reset();
             }
         }
 
@@ -84,71 +89,22 @@ namespace CsLox
         /// <param name="source">The source to run</param>
         private static void Run(string source)
         {
-            Scanner scanner = new Scanner(source);
+            Scanner scanner = new Scanner(source, _error_handler);
             List<Token> tokens = scanner.ScanTokens();
 
-            Parser parser = new Parser(tokens);
+            Parser parser = new Parser(tokens, _error_handler);
             List<Stmt> statements = parser.Parse();
 
-            if (_had_error) return;
+            if (_error_handler.SyntaxError) return;
 
-            Resolver resolver = new Resolver(_interpreter);
+            Resolver resolver = new Resolver(_interpreter, _error_handler);
             resolver.Resolve(statements);
 
-            if (_had_error) return;
+            if (_error_handler.SyntaxError) return;
 
             _interpreter.Interpret(statements);
 
         }
 
-        /// <summary>
-        /// Log a scanning error
-        /// </summary>
-        /// <param name="line">The line number</param>
-        /// <param name="message">The error message</param>
-        public static void Error(int line, string message)
-        {
-
-            Report(line, "", message);
-        }
-
-        /// <summary>
-        /// Log a parsing error
-        /// </summary>
-        /// <param name="token">The token</param>
-        /// <param name="message">The error message</param>
-        public static void Error(Token token, string message)
-        {
-            if (token.Type == TokenType.EOF)
-            {
-                Report(token.Line, " at end", message);
-            }
-            else
-            {
-                Report(token.Line, $" at '{token.Lexeme}'", message);
-            }
-
-            _had_error = true;
-        }
-
-        public static void RuntimeError(RuntimeErrorException error)
-        {
-            Console.Error.WriteLine(error.Message);
-            Console.Error.WriteLine($"[line {error.Token.Line}]");
-
-            _had_runtime_error = true;
-
-        }
-
-        /// <summary>
-        /// Print an error message
-        /// </summary>
-        /// <param name="line">The line</param>
-        /// <param name="where">Location</param>
-        /// <param name="message">The message</param>
-        private static void Report(int line, string where, string message)
-        {
-            Console.Error.WriteLine("[line {0}] Error {1}: {2}", line, where, message);
-        }
     }
 }

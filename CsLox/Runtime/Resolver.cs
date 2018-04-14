@@ -8,20 +8,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CsLox.ErrorHandlers;
 
 namespace CsLox.Runtime
 {
     class Resolver : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
+        private readonly IErrorHandler _error_handler;
         private readonly Interpreter _interpeter;
         private readonly StackList<HashMap<string, bool?>> _scopes = new StackList<HashMap<string, bool?>>();
 
         private FunctionType _current_function = FunctionType.NONE;
         private ClassType _current_class = ClassType.NONE;
 
-        public Resolver(Interpreter interpreter)
+        public Resolver(Interpreter interpreter, IErrorHandler error_handler)
         {
             _interpeter = interpreter;
+            _error_handler = error_handler;
         }
 
         /// <summary>
@@ -61,7 +64,7 @@ namespace CsLox.Runtime
         {
             if (!_scopes.IsEmpty() && _scopes.Peek().Get(expr.Name.Lexeme) == false)
             {
-                CsLox.Error(expr.Name, "Cannot read local variable in its own initializer.");
+                _error_handler.Error(expr.Name, "Cannot read local variable in its own initializer.");
             }
             ResolveLocal(expr, expr.Name);
 
@@ -147,7 +150,7 @@ namespace CsLox.Runtime
             // Make sure we are in a function
             if (_current_function == FunctionType.NONE)
             {
-                CsLox.Error(stmt.Keyword, "Cannot return from top-level code.");
+                _error_handler.Error(stmt.Keyword, "Cannot return from top-level code.");
             }
 
 
@@ -156,7 +159,7 @@ namespace CsLox.Runtime
                 // Check this is not in a initializer
                 if (_current_function == FunctionType.INITIALIZER)
                 {
-                    CsLox.Error(stmt.Keyword, "Cannot return from an initializer.");
+                    _error_handler.Error(stmt.Keyword, "Cannot return from an initializer.");
                 }
 
                 Resolve(stmt.Value);
@@ -260,11 +263,11 @@ namespace CsLox.Runtime
         {
             if (_current_class == ClassType.NONE)
             {
-                CsLox.Error(expr.keyword, "Cannot use 'super' outside of a class.");
+                _error_handler.Error(expr.keyword, "Cannot use 'super' outside of a class.");
             }
             else if (_current_class != ClassType.SUBCLASS)
             {
-                CsLox.Error(expr.keyword, "Cannot use 'super' in a class with no superclass.");
+                _error_handler.Error(expr.keyword, "Cannot use 'super' in a class with no superclass.");
             }
 
 
@@ -388,7 +391,7 @@ namespace CsLox.Runtime
             // Make sure we are in a class
             if (_current_class == ClassType.NONE)
             {
-                CsLox.Error(expr.Keyword, "Cannot use 'this' outside of a class.");
+                _error_handler.Error(expr.Keyword, "Cannot use 'this' outside of a class.");
             }
 
             ResolveLocal(expr, expr.Keyword);
@@ -500,7 +503,7 @@ namespace CsLox.Runtime
             // Make sure we hav't already declared this variable
             if (scope.ContainsKey(name.Lexeme))
             {
-                CsLox.Error(name, "Variable with this name already in this scope.");
+                _error_handler.Error(name, "Variable with this name already in this scope.");
             }
 
 

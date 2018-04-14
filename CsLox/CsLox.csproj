@@ -46,6 +46,8 @@
     <Compile Include="Collections\HashMap.cs" />
     <Compile Include="Collections\StackList.cs" />
     <Compile Include="CsLox.cs" />
+    <Compile Include="ErrorHandlers\ConsoleErrorHandler.cs" />
+    <Compile Include="ErrorHandlers\IErrorHandler.cs" />
     <Compile Include="Exceptions\BreakException.cs" />
     <Compile Include="Exceptions\ContinueException.cs" />
     <Compile Include="Runtime\LoxClass.cs" />

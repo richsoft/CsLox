@@ -1,4 +1,5 @@
-﻿using CsLox.SyntaxTree;
+﻿using CsLox.ErrorHandlers;
+using CsLox.SyntaxTree;
 using CsLox.Tokens;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace CsLox.Parsing
 
     class Parser
     {
+        private readonly IErrorHandler _error_handler;
         private readonly List<Token> _tokens;
         private int _current = 0;
         private int _loop_depth = 0;
@@ -19,9 +21,10 @@ namespace CsLox.Parsing
         /// Create a new Parser instance
         /// </summary>
         /// <param name="tokens">The input tokens</param>
-        public Parser(List<Token> tokens)
+        public Parser(List<Token> tokens, IErrorHandler error_handler)
         {
             this._tokens = tokens;
+            this._error_handler = error_handler;
         }
 
         /// <summary>
@@ -724,7 +727,7 @@ namespace CsLox.Parsing
         /// <param name="message">The error message</param>
         private ParseErrorException Error(Token token, string message)
         {
-            CsLox.Error(token, message);
+            _error_handler.Error(token, message);
             return new ParseErrorException();
         }
 
