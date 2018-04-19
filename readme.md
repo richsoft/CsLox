@@ -1,21 +1,14 @@
-﻿## Operator Precedence and Associatity
+﻿# CsLox - A C# Lox Interpreter
+
+A C# implementation of the Lox language interpreter from the [Crafting Interpreters](http://www.craftinginterpreters.com) ebook by [Bob Nystrom](https://github.com/munificent).
+
+This is basically a direct port of **jlox** from the book.
 
 
-Name            | Operators | Associates 
-----------------|-----------|-------
-Unary           | ! -       | Right 
-Multiplication  | / *       | Left 
-Addition        | - +       | Left 
-Comparison      | > >= < <= | Left 
-Equality        | == !=     | Left 
 
+### Language Extensions
 
-expression     → equality ;
-equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
-addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
-multiplication → unary ( ( "/" | "*" ) unary )* ;
-unary          → ( "!" | "-" ) unary
-               | primary ;
-primary        → NUMBER | STRING | "false" | "true" | "nil"
-               | "(" expression ")" ;
+* `break` and `continue` in loops
+* `do` .. `while` loops
+* Number to string coercing on concatination (`+`)
+

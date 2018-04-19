@@ -1,21 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using CsLox.Scanning;
-using CsLox.Tokens;
-using CsLox.SyntaxTree;
+﻿using CsLox.ErrorHandlers;
 using CsLox.Parsing;
-using CsLox.Exceptions;
 using CsLox.Runtime;
-using CsLox.ErrorHandlers;
-using System.Threading;
+using CsLox.Scanning;
+using CsLox.SyntaxTree;
+using CsLox.Tokens;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace CsLox
 {
-    class CsLox
+    internal class CsLox
     {
         private static readonly Interpreter _interpreter;
         private static readonly IErrorHandler _error_handler;
@@ -26,10 +21,8 @@ namespace CsLox
             _interpreter = new Interpreter(_error_handler);
         }
 
-
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-
             if (args.Length > 1)
             {
                 Console.WriteLine("Usage CsLox [script]");
@@ -42,7 +35,6 @@ namespace CsLox
             {
                 RunPrompt();
             }
-
         }
 
         /// <summary>
@@ -101,8 +93,6 @@ namespace CsLox
             if (_error_handler.SyntaxError) return;
 
             _interpreter.Interpret(statements);
-
         }
-
     }
 }

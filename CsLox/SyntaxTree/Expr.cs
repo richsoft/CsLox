@@ -12,28 +12,40 @@ namespace CsLox.SyntaxTree
 
         public interface IVisitor<T>
         {
-            T Visit(Binary expr);
-            T Visit(Grouping expr);
-            T Visit(Literal expr);
-            T Visit(Unary expr);
-            T Visit(Variable expr);
             T Visit(Assign expr);
-            T Visit(Logical expr);
+            T Visit(Binary expr);
             T Visit(Call expr);
             T Visit(Get expr);
+            T Visit(Grouping expr);
+            T Visit(Literal expr);
+            T Visit(Logical expr);
             T Visit(Set expr);
-            T Visit(This expr);
             T Visit(Super expr);
+            T Visit(This expr);
+            T Visit(Unary expr);
+            T Visit(Variable expr);
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
 
+        public class Assign : Expr
+        {
+            public Expr value;
+            public Assign(Token name, Expr value)
+            {
+                this.Name = name;
+                this.value = value;
+            }
+
+            public Token Name { get; }
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
         public class Binary : Expr
         {
-            public Expr Left { get; }
-            public Token Operator { get; }
-            public Expr Right { get; }
-
             public Binary(Expr left, Token op, Expr right)
             {
                 this.Left = left;
@@ -41,105 +53,9 @@ namespace CsLox.SyntaxTree
                 this.Right = right;
             }
 
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.Visit(this);
-            }
-        }
-
-        public class Grouping : Expr
-        {
-            public Expr Expression { get; }
-
-            public Grouping(Expr expression)
-            {
-                this.Expression = expression;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.Visit(this);
-            }
-        }
-
-        public class Literal : Expr
-        {
-            public object Value { get; }
-
-            public Literal(object value)
-            {
-                this.Value = value;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.Visit(this);
-            }
-        }
-
-        public class Unary : Expr
-        {
-            public Token Operator { get; }
-            public Expr Right { get; }
-
-
-            public Unary(Token op, Expr right)
-            {
-                this.Operator = op;
-                this.Right = right;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.Visit(this);
-            }
-        }
-
-        public class Variable : Expr
-        {
-            public Token Name { get; }
-
-            public Variable(Token name)
-            {
-                this.Name = name;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.Visit(this);
-            }
-        }
-
-        public class Assign : Expr
-        {
-            public Token Name { get; }
-            public Expr value;
-
-            public Assign(Token name, Expr value)
-            {
-                this.Name = name;
-                this.value = value;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.Visit(this);
-            }
-        }
-
-        public class Logical : Expr
-        {
             public Expr Left { get; }
             public Token Operator { get; }
             public Expr Right { get; }
-
-            public Logical(Expr left, Token op, Expr right)
-            {
-                this.Left = left;
-                this.Operator = op;
-                this.Right = right;
-            }
-
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.Visit(this);
@@ -148,10 +64,6 @@ namespace CsLox.SyntaxTree
 
         public class Call : Expr
         {
-            public Expr Callee { get; }
-            public Token Paren { get; }
-            public IList<Expr> Arguments { get; }
-
             public Call(Expr callee, Token paren, IList<Expr> arguments)
             {
                 this.Callee = callee;
@@ -159,6 +71,9 @@ namespace CsLox.SyntaxTree
                 this.Arguments = arguments;
             }
 
+            public IList<Expr> Arguments { get; }
+            public Expr Callee { get; }
+            public Token Paren { get; }
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.Visit(this);
@@ -168,15 +83,60 @@ namespace CsLox.SyntaxTree
 
         public class Get : Expr
         {
-            public Expr Object { get; }
-            public Token Name { get; }
-
             public Get(Expr obj, Token name)
             {
                 this.Object = obj;
                 this.Name = name;
             }
 
+            public Token Name { get; }
+            public Expr Object { get; }
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Grouping : Expr
+        {
+            public Grouping(Expr expression)
+            {
+                this.Expression = expression;
+            }
+
+            public Expr Expression { get; }
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Literal : Expr
+        {
+            public Literal(object value)
+            {
+                this.Value = value;
+            }
+
+            public object Value { get; }
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Logical : Expr
+        {
+            public Logical(Expr left, Token op, Expr right)
+            {
+                this.Left = left;
+                this.Operator = op;
+                this.Right = right;
+            }
+
+            public Expr Left { get; }
+            public Token Operator { get; }
+            public Expr Right { get; }
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.Visit(this);
@@ -185,10 +145,6 @@ namespace CsLox.SyntaxTree
 
         public class Set : Expr
         {
-            public Expr Object { get; }
-            public Token Name { get; }
-            public Expr Value { get; }
-
             public Set(Expr obj, Token name, Expr value)
             {
                 this.Object = obj;
@@ -196,6 +152,25 @@ namespace CsLox.SyntaxTree
                 this.Value = value;
             }
 
+            public Token Name { get; }
+            public Expr Object { get; }
+            public Expr Value { get; }
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Super : Expr
+        {
+            public Super(Token keyword, Token method)
+            {
+                this.keyword = keyword;
+                this.Method = method;
+            }
+
+            public Token keyword { get; }
+            public Token Method { get; }
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.Visit(this);
@@ -204,13 +179,12 @@ namespace CsLox.SyntaxTree
 
         public class This : Expr
         {
-            public Token Keyword { get; }
-
             public This(Token keyword)
             {
                 this.Keyword = keyword;
             }
 
+            public Token Keyword { get; }
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.Visit(this);
@@ -218,17 +192,30 @@ namespace CsLox.SyntaxTree
 
         }
 
-        public class Super : Expr
+        public class Unary : Expr
         {
-            public Token keyword { get; }
-            public Token Method { get; }
-
-            public Super(Token keyword, Token method)
+            public Unary(Token op, Expr right)
             {
-                this.keyword = keyword;
-                this.Method = method;
+                this.Operator = op;
+                this.Right = right;
             }
 
+            public Token Operator { get; }
+            public Expr Right { get; }
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.Visit(this);
+            }
+        }
+
+        public class Variable : Expr
+        {
+            public Variable(Token name)
+            {
+                this.Name = name;
+            }
+
+            public Token Name { get; }
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.Visit(this);
