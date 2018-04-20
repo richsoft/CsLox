@@ -10,5 +10,5 @@ This is basically a direct port of **jlox** from the book.
 
 * `break` and `continue` in loops
 * `do` .. `while` loops
-* Number to string coercing on concatination (`+`)
+* Number to string coercion on concatination (`+`)
 
